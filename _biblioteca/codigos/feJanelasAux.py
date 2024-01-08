@@ -177,38 +177,6 @@ def f_plotaAderencias(self, datasCompletas):
         nomesSemana.append('Semana ' + str(nSemana+1))
 
     # plotando
-    # gerando gráfico
-    graficoAderencia = make_subplots(rows = 2, cols = 1, subplot_titles = (['']))
-    
-    # curva de aderência semanal
-    grupoGrafico = go.Scatter(
-        x = nomesSemana,
-        y = aderenciaSemanal,
-        name = 'Semanal',
-        marker = dict(color = 'rgba(44, 69, 148, 1)', size = 18),
-        mode = 'markers+text',
-        text = aderenciaSemanal,
-        textposition = 'middle right',
-    )
-    graficoAderencia.add_trace(grupoGrafico, row = 1, col = 1)
-
-    # curva de aderência semanal
-    grupoGrafico = go.Scatter(
-        x = nomesSemana,
-        y = aderenciaAcumulada,
-        name = 'Acumulada',
-        marker = dict(color = 'rgba(44, 69, 148, 1)', size = 18),
-        mode = 'markers+text',
-        text = aderenciaAcumulada,
-        textposition = 'middle right',
-    )
-    graficoAderencia.add_trace(grupoGrafico, row = 2, col = 1)
-    
-    graficoAderencia.update_xaxes(title_text = 'Semana', row = 1, col = 1)
-    graficoAderencia.update_yaxes(title_text = 'Aderência [%]', row = 1, col = 1)
-    graficoAderencia.update_xaxes(title_text = 'Acumulada', row = 2, col = 1)
-    graficoAderencia.update_yaxes(title_text = 'Aderência [%]', row = 2, col = 1)
-    
     # curva de meta
     curvaMeta = go.Scatter(
         x = [nomesSemana[0], nomesSemana[-1]],
@@ -217,13 +185,44 @@ def f_plotaAderencias(self, datasCompletas):
         marker = dict(color = 'rgba(93, 145, 69, .5)', size = 0),
         mode = 'lines+markers',
     )
-    graficoAderencia.add_trace(curvaMeta, row = 1, col = 1)
-    graficoAderencia.add_trace(curvaMeta, row = 2, col = 1)
-    
-    # plotando
-    graficoAderencia.update_layout(
-        title = 'Aderências: ' + self.propriedadesGerais['gestorDaVez'].upper(),
-        showlegend = False    
+
+    # criando figura com subplots
+    graficoAderencia = make_subplots(
+        rows = 2, cols = 1,
+        shared_xaxes = True,
+        subplot_titles = ['Semanal [%]', 'Acumulada [%]'],
+        # vertical_spacing=  0.1,
     )
 
-    pyo.plot(graficoAderencia)
+    aderenciaSemanal = go.Scatter(
+            x = nomesSemana,
+            y = aderenciaSemanal,
+            name = 'Semanal',
+            marker = dict(color = 'rgba(44, 69, 148, 1)', size = 18),
+            mode = 'markers+text',
+            text = aderenciaSemanal,
+            textposition = 'middle right',
+        )
+    graficoAderencia.add_trace(aderenciaSemanal, row = 1, col = 1)
+    graficoAderencia.add_trace(curvaMeta, row = 1, col = 1)
+
+    aderenciaAcumulada = go.Scatter(
+            x = nomesSemana,
+            y = aderenciaAcumulada,
+            name = 'Acumulada',
+            marker = dict(color = 'rgba(44, 69, 148, 1)', size = 18),
+            mode = 'markers+text',
+            text = aderenciaAcumulada,
+            textposition = 'middle right',
+        )
+    graficoAderencia.add_trace(aderenciaAcumulada, row = 2, col = 1)
+    graficoAderencia.add_trace(curvaMeta, row = 2, col = 1)
+
+    # ajustando layout
+    graficoAderencia.update_layout(
+        showlegend = False,
+        title_text = 'Aderências: ' + self.propriedadesGerais['gestorDaVez'].upper(),
+    )
+
+    # Exibindo figura
+    graficoAderencia.show()

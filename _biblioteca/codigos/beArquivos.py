@@ -38,6 +38,6 @@ def f_abrePlanilha(caminhoArquivo):
         tabelaDaVez.insert(0, 'cor', ['f7f7f7'] * nLinhas) 
         tabelaDaVez.insert(1, 'status', ['ND'] * nLinhas)
 
-        tabelaLida.append({'gestor': nomesAbas[indiceAbas].upper(), 'dados': tabelaDaVez})
+        tabelaLida.append({'gestor': nomesAbas[indiceAbas].upper(), 'dados': tabelaDaVez, 'planoDeAcao': []})
 
     return tabelaLida

@@ -2,10 +2,14 @@
 #  > [p2303] visualizador masterplan
 #
 #  > histórico de revisões
-#      - 20230822
+#      - 20231022
 #        - autor: cádmo dias
 #        - observações: 
 #          - criação
+#      - 20231201
+#        - autor: cádmo dias
+#        - observações: 
+#          - salvando ok's
 #
 
 # -----------------------------------------------------------------------------------------------

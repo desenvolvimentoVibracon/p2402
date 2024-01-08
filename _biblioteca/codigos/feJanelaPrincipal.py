@@ -5,7 +5,7 @@ import pandas as pd
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon, QPixmap, QBrush, QColor
-from PyQt5.QtWidgets import QMessageBox, QHBoxLayout, QApplication, QMainWindow, QLabel, QVBoxLayout, QWidget, QFileDialog, QComboBox, QTableWidgetItem, QDialog
+from PyQt5.QtWidgets import QHeaderView, QApplication, QMessageBox, QHBoxLayout, QMainWindow, QLabel, QVBoxLayout, QWidget, QFileDialog, QComboBox, QTableWidgetItem, QDialog
 from PyQt5 import QtGui
 
 import _biblioteca.codigos.beArquivos as beArquivos
@@ -50,7 +50,7 @@ class JanelaPrincipal(QMainWindow):
 
         # > fe
         # título da janela
-        self.setWindowTitle('VIBRACON VibraPlan (v.2023.11.21)')
+        self.setWindowTitle('VIBRACON VibraPlan (v.2023.12.11)')
 
         # ícone
         icone = QIcon('_biblioteca/arte/logos/logoVibracon1.png')
@@ -135,7 +135,9 @@ class JanelaPrincipal(QMainWindow):
 
     # -----------------------------------------
     # função para atualizar exibição do gráfico
-    def f_atualizaVisualizacao(self):        
+    def f_atualizaVisualizacao(self):      
+        QMessageBox.information(self, 'AVISO', f'Após confirmar abaixo, aguarde a confirmação enquanto os dados são atualizados!')
+
         # limpando tabela
         self.quadroTarefas.clearContents()
         self.quadroTarefas.setRowCount(0)
@@ -163,47 +165,81 @@ class JanelaPrincipal(QMainWindow):
                 datasCompletas = pd.date_range(start = primeiraData, end = ultimaData, freq = 'b').strftime('%d-%b-%Y').tolist()
 
                 # definindo número de linhas e colunas de acordo com quantidade de tarefas e datas, respectivamente
+                quantidadeColunas = self.tabelaLida[indiceTabela]['dados'].shape[1] + len(datasCompletas)-1 + 1
                 self.quadroTarefas.setRowCount(self.tabelaLida[indiceTabela]['dados'].shape[0])
-                self.quadroTarefas.setColumnCount(self.tabelaLida[indiceTabela]['dados'].shape[1]+len(datasCompletas)-1)
-                self.quadroTarefas.setHorizontalHeaderLabels(['', 'STATUS', 'TAREFAS'] + datasCompletas)
+                self.quadroTarefas.setColumnCount(quantidadeColunas) # +1 do plano de ação
+                self.quadroTarefas.setHorizontalHeaderLabels(['', 'STATUS', 'TAREFAS'] + datasCompletas + ['PLANO DE AÇÃO'])
+                
+                # aumentando largura do plano de ação
+                self.quadroTarefas.setColumnWidth(quantidadeColunas-1, 700)
 
                 # listando tarefas
                 colunaTarefas = self.tabelaLida[indiceTabela]['dados'].iloc[:, 2]
+                colunaPlanoAcao = self.tabelaLida[indiceTabela]['planoDeAcao']
                 for indiceTarefa in range(colunaTarefas.shape[0]):
+                    # tarefa
                     item = QTableWidgetItem(str(colunaTarefas.iloc[indiceTarefa]))
                     self.quadroTarefas.setItem(indiceTarefa, 2, item)
 
-                # identificando datas de realização de cada tarefa
-                datasTarefas = self.tabelaLida[indiceTabela]['dados'].iloc[:, 3]
-                for linhaDaVez, dataTarefaDaVez in enumerate(datasTarefas):
+                    # plano de ação
                     try:
-                        # selecionando coluna: adicionando 3 devido às colunas de cabeçalho
-                        nomeColunaDaVez = dataTarefaDaVez.strftime('%d-%b-%Y')
-                        indiceColunaDaVez = datasCompletas.index(nomeColunaDaVez) + 3
-                        self.quadroTarefas.setItem(
-                            linhaDaVez, indiceColunaDaVez,
-                            QTableWidgetItem(str('OK'))
-                        )
-                
-                        # adicionando lista suspensa na coluna de status quando houver tarefa
-                        dropdown = QComboBox()
-                        dropdown.setStyleSheet("QComboBox { background-color: transparent; border: 0px}")
-                        dropdown.addItems(['ND', 'ENTREGUE', 'RISCO', 'ATRASADO', 'EFPRAZO'])
-                        dropdown.currentIndexChanged.connect(lambda index, indiceTarefas = linhaDaVez: self.f_atualizouListaSuspensa(indiceTarefas, indiceTabela))
-                        dropdown.setCurrentText(self.tabelaLida[indiceTabela]['dados']['status'][linhaDaVez])
-                        self.quadroTarefas.setCellWidget(linhaDaVez, 1, dropdown)
+                        item = QTableWidgetItem(str(colunaPlanoAcao[indiceTarefa]))
+                        self.quadroTarefas.setItem(indiceTarefa, quantidadeColunas-1, item)
+                    except: pass
 
-                    except Exception: pass
+                try:
+                    for okDaVez in self.tabelaLida[indiceTabela]['registroDatas']:
+                        QApplication.processEvents()
+                        self.quadroTarefas.setItem(
+                                okDaVez['linha'], okDaVez['coluna'],
+                                QTableWidgetItem(str('OK'))
+                            )
+                        
+                        # adicionando lista suspensa na coluna de status quando houver tarefa
+                        self.f_adicionaListaStatus(indiceTabela,  okDaVez['linha'])
+
+                except Exception as e:
+                    # identificando datas de realização de cada tarefa
+                    datasTarefas = self.tabelaLida[indiceTabela]['dados'].iloc[:, 3]
+                    for linhaDaVez, dataTarefaDaVez in enumerate(datasTarefas):
+                        QApplication.processEvents()
+                        try:
+                            # selecionando coluna: adicionando 3 devido às colunas de cabeçalho
+                            nomeColunaDaVez = dataTarefaDaVez.strftime('%d-%b-%Y')
+                            indiceColunaDaVez = datasCompletas.index(nomeColunaDaVez) + 3
+                            self.quadroTarefas.setItem(
+                                linhaDaVez, indiceColunaDaVez,
+                                QTableWidgetItem(str('OK'))
+                            )
+                    
+                            # adicionando lista suspensa na coluna de status quando houver tarefa
+                            self.f_adicionaListaStatus(indiceTabela, linhaDaVez)
+
+                        except Exception: pass
 
                 break
 
         # personalizando linhas cujo tarefas são cabeçalhos
-        self.f_identificaCabecalho()
+        ######self.f_identificaCabecalho() FIXME
 
         # definindo tamanho das primeiras três colunas: cor do status, status e tarefa
-        self.quadroTarefas.setColumnWidth(0, 50)
+        self.quadroTarefas.setColumnWidth(0, 0)
         self.quadroTarefas.setColumnWidth(1, 160)
         self.quadroTarefas.setColumnWidth(2, 500)
+
+        QMessageBox.information(self, 'AVISO', f'Dados importados com sucesso!\n\n')
+
+
+    # -----------------------------------------
+    # função para adicionar lista suspensa
+    def f_adicionaListaStatus(self, indiceTabela, linhaDaVez):
+        # adicionando lista suspensa na coluna de status quando houver tarefa
+        dropdown = QComboBox()
+        dropdown.setStyleSheet('QComboBox { background-color: transparent; border: 0px}')
+        dropdown.addItems(['ND', 'ENTREGUE', 'RISCO', 'ATRASADO', 'EFPRAZO'])
+        dropdown.currentIndexChanged.connect(lambda index, indiceTarefas = linhaDaVez: self.f_atualizouListaSuspensa(indiceTarefas, indiceTabela))
+        dropdown.setCurrentText(self.tabelaLida[indiceTabela]['dados']['status'][linhaDaVez])
+        self.quadroTarefas.setCellWidget(linhaDaVez, 1, dropdown)
 
 
 
@@ -217,16 +253,41 @@ class JanelaPrincipal(QMainWindow):
 
 
     # -----------------------------------------
+    # função para salvar novas datas modificadas já no vibraplan
+    def f_salvaNovasDatas(self):
+        #
+        registrosDatas = []
+        for linhaDaVez in range(self.quadroTarefas.rowCount()):
+            for colunaDaVez in range(self.quadroTarefas.columnCount()):
+                # obtendo valor da célula caso ela exista
+                celulaDaVez = self.quadroTarefas.item(linhaDaVez, colunaDaVez)
+                if celulaDaVez is not None:
+                    if celulaDaVez.text().upper() == 'OK' :
+                        registrosDatas.append({'linha': linhaDaVez, 'coluna': colunaDaVez})
+
+        # percorrendo todas as abas até encontrar a da liderança atual
+        for indiceTabela, gestaoPossivel in enumerate(self.propriedadesGerais['gestoesPossiveis']):
+
+            # quando encontrar a desejada
+            if gestaoPossivel == self.propriedadesGerais['gestorDaVez']:
+                self.tabelaLida[indiceTabela]['registroDatas'] = registrosDatas
+                break
+
+    # -----------------------------------------
     # função para inicializar janela de seleção de gestor
     def f_abreJanelaSelecaoGestor(self):
+        print('>>>>>>>', self.tabelaLida)
         # chamando classe com janela para seleção do gesto
         janelaSelecionaGestor = feJanelasAux.JanelaSelecionaGestor(self)
         if janelaSelecionaGestor.exec_() == QDialog.Accepted:
+            # salvando datas de tarefas atuais
+            self.f_salvaNovasDatas()
+
+            # atualizando
             self.propriedadesGerais['gestorDaVez'] = janelaSelecionaGestor.f_obtemPropriedades()
 
             # atualizando visualização com o gestor escolhido
             if self.propriedadesGerais['gestorDaVez'] != '':
-                QMessageBox.information(self, 'AVISO', f"Aguarde enquanto a visualização é atualizada!\n\n Liderança selecionada: {self.propriedadesGerais['gestorDaVez']}")
                 self.f_atualizaVisualizacao()
 
 
@@ -245,7 +306,7 @@ class JanelaPrincipal(QMainWindow):
     # função trigada quando célula é atualizada
     def f_atualizouCelula(self):
         # cores de acordo com textos
-        textoCor = { 'OK': '#2C4594', 'NOK': '#5D9145', }
+        textoCor = { 'OK': '#2C4594', 'NOK': '#5D9145', '': '#f7f7f7' }
         
         # percorrendo linhas e colunas da tabela
         for linhaDaVez in range(self.quadroTarefas.rowCount()):
@@ -261,7 +322,21 @@ class JanelaPrincipal(QMainWindow):
                         self.quadroTarefas.item(linhaDaVez, colunaDaVez).setBackground(QBrush(QColor(corDaVez)))
                         self.quadroTarefas.item(linhaDaVez, colunaDaVez).setForeground(QBrush(QColor(corDaVez)))
 
+        
+        # pegando plano de ação
+        planoDeAcao = []
+        for linhaDaVez in range(self.quadroTarefas.rowCount()):
+            try:
+                planoDeAcao.append(self.quadroTarefas.item(linhaDaVez, self.quadroTarefas.columnCount()-1).text())
+            except:
+                planoDeAcao.append('')
 
+        # percorrendo todas as abas até encontrar a desejada
+        for indiceTabela, gestaoPossivel in enumerate(self.propriedadesGerais['gestoesPossiveis']):
+            # quando encontrar a desejada
+            if gestaoPossivel == self.propriedadesGerais['gestorDaVez']:
+                self.tabelaLida[indiceTabela]['planoDeAcao'] = planoDeAcao
+        planoDeAcao = []
 
     # -----------------------------------------
     # função trigada quando lista suspensa é atualizada
@@ -287,20 +362,22 @@ class JanelaPrincipal(QMainWindow):
     def f_coloreStatus(self, linhaDaVez, valorDaVez):
             
             # definindo a cor de acordo com o texto
-            corDaVez = '#f7f7f7'
-            if valorDaVez == 'ENTREGUE': corDaVez = '#5D9145'
-            elif valorDaVez == 'RISCO': corDaVez = '#ee964b'
-            elif valorDaVez == 'ATRASADO': corDaVez = '#DF6158'
-            elif valorDaVez == 'EFPRAZO': corDaVez = '#942c79'
+            corDaVez = '#f7f7f7'; corTexto = '#e6e6e6'
+            if valorDaVez == 'ENTREGUE': corDaVez = '#5D9145'; corTexto = '#f7f7f7'
+            elif valorDaVez == 'RISCO': corDaVez = '#ee964b'; corTexto = '#f7f7f7'
+            elif valorDaVez == 'ATRASADO': corDaVez = '#DF6158'; corTexto = '#f7f7f7'
+            elif valorDaVez == 'EFPRAZO': corDaVez = '#942c79'; corTexto = '#f7f7f7'
             
             # colorindo célula da primeira coluna e linha selecionada: caso não exista (célula vazia), uma nova célula é criada
-            celulaDaVez = self.quadroTarefas.item(linhaDaVez, 0)
+            celulaDaVez = self.quadroTarefas.item(linhaDaVez, 2)
             if celulaDaVez:
                 celulaDaVez.setBackground(QColor(corDaVez))
+                celulaDaVez.setForeground(QColor(corTexto))
             else:
                 novaCelula = QTableWidgetItem()
                 novaCelula.setBackground(QColor(corDaVez))
-                self.quadroTarefas.setItem(linhaDaVez, 0, novaCelula)
+                novaCelula.setForeground(QColor(corTexto))
+                self.quadroTarefas.setItem(linhaDaVez, 2, novaCelula)
 
 
 
@@ -341,7 +418,7 @@ class JanelaPrincipal(QMainWindow):
     # janela para carregar projeto
     def f_janelaCarregaProjeto(self):
         # abrindo janela de diálogo
-        caminhoArquivo, _ = QFileDialog.getOpenFileName(self, 'CARREGAR', '', 'Arquivos VibraPlan (*.projVP);;All Files (*)')
+        caminhoArquivo, _ = QFileDialog.getOpenFileName(self, 'CARREGAR', '', 'Arquivos VibraPlan (*.projVibraPlan);;All Files (*)')
 
         # caso usuário defina nome e caminho, lendo os dados do projeto
         if caminhoArquivo:
@@ -353,7 +430,6 @@ class JanelaPrincipal(QMainWindow):
                 self.f_atualizaGestores()
                 self.f_atualizaVisualizacao()
 
-                QMessageBox.information(self, 'AVISO', f'Projeto carregado com sucesso!\n\n {caminhoArquivo}')
             except Exception as erro:
                 QMessageBox.critical(self, 'AVISO', f'Falha ao carregar o projeto.\n\n {str(erro)}')
         else:
@@ -364,8 +440,11 @@ class JanelaPrincipal(QMainWindow):
     # -----------------------------------------
     # janela para salvamento do projeto
     def f_janelaSalvaProjeto(self):
+        # salvando datas de tarefas atuais
+        self.f_salvaNovasDatas()
+
         # abrindo janela de diálogo
-        caminhoArquivo, _ = QFileDialog.getSaveFileName(self, 'SALVAR', '', 'Arquivos VibraPlan (*.projVP);;All Files (*)')
+        caminhoArquivo, _ = QFileDialog.getSaveFileName(self, 'SALVAR', '', 'Arquivos VibraPlan (*.projVibraPlan);;All Files (*)')
 
         # caso usuário defina nome e caminho, salvando os dados do projeto
         if caminhoArquivo:
@@ -402,12 +481,12 @@ class JanelaPrincipal(QMainWindow):
                 # abrindo arquivo e lendo cada aba presente
                 self.tabelaLida = beArquivos.f_abrePlanilha(caminhoArquivo)
 
+                # 
                 self.f_atualizaGestores()
 
                 # atualizando exibição
                 self.f_atualizaVisualizacao()
 
-                QMessageBox.information(self, 'AVISO', f'Dados importados com sucesso!\n\n {caminhoArquivo}')
             except Exception as erro:
                 self.propriedadesGerais['gestoesPossiveis'] = []
                 self.propriedadesGerais['gestorDaVez'] = ''
