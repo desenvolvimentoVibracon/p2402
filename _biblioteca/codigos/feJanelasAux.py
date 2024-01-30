@@ -22,8 +22,6 @@ class JanelaSelecionaGestor(QDialog):
         # inicializando gui
         self.f_inicializaGui(parent)
 
-
-
     # -----------------------------------------
     # função para inicializar interface
     def f_inicializaGui(self, parent):
@@ -64,8 +62,6 @@ class JanelaSelecionaGestor(QDialog):
         # definindo layout
         self.setLayout(layout)
 
-
-
     # -----------------------------------------
     # função para gerar entrada lista suspensa
     def f_geraEntradaListaSuspensaDistribuicoes(self, coluna, texto, parentDadoLido):
@@ -75,14 +71,10 @@ class JanelaSelecionaGestor(QDialog):
         entradaListaSuspensaGerada.addItems(parentDadoLido['gestoesPossiveis'])
         return entradaListaSuspensaGerada
 
-
-
     # -----------------------------------------
     # função para retornar propriedades para a classe de janela principal
     def f_obtemPropriedades(self):
         return self.entradaGestorDaVez.currentText()
-
-
 
 # -----------------------------------------
 # função para geração dos gráficos de aderências
@@ -91,7 +83,7 @@ def f_plotaAderencias(self, datasCompletas):
     diasSemanaVez = 0
     diasPorSemana = []
     for indiceData in range(len(datasCompletas)-1):
-        diferencaEmDias = abs((datetime.strptime(datasCompletas[indiceData+1], '%d-%b-%Y') - datetime.strptime(datasCompletas[indiceData], '%d-%b-%Y')).days)
+        diferencaEmDias = abs((datetime.strptime(datasCompletas[indiceData+1], '%d-%b') - datetime.strptime(datasCompletas[indiceData], '%d-%b')).days)
         if diferencaEmDias <= 1:
             diasSemanaVez += 1
             pass
@@ -186,7 +178,7 @@ def f_plotaAderencias(self, datasCompletas):
         mode = 'lines+markers',
     )
 
-    # criando figura com subplots
+        # criando figura com subplots
     graficoAderencia = make_subplots(
         rows = 2, cols = 1,
         shared_xaxes = True,
@@ -194,35 +186,31 @@ def f_plotaAderencias(self, datasCompletas):
         # vertical_spacing=  0.1,
     )
 
-    aderenciaSemanal = go.Scatter(
-            x = nomesSemana,
-            y = aderenciaSemanal,
-            name = 'Semanal',
-            marker = dict(color = 'rgba(44, 69, 148, 1)', size = 18),
-            mode = 'markers+text',
-            text = aderenciaSemanal,
-            textposition = 'middle right',
-        )
+    aderenciaSemanal = go.Bar(
+    x = nomesSemana,
+    y = aderenciaSemanal,
+    name = 'Semanal',
+    marker = dict(color = 'rgba(44, 69, 148, 1)'),
+    )
     graficoAderencia.add_trace(aderenciaSemanal, row = 1, col = 1)
     graficoAderencia.add_trace(curvaMeta, row = 1, col = 1)
 
-    aderenciaAcumulada = go.Scatter(
-            x = nomesSemana,
-            y = aderenciaAcumulada,
-            name = 'Acumulada',
-            marker = dict(color = 'rgba(44, 69, 148, 1)', size = 18),
-            mode = 'markers+text',
-            text = aderenciaAcumulada,
-            textposition = 'middle right',
-        )
+    aderenciaAcumulada = go.Bar(
+        x = nomesSemana,
+        y = aderenciaAcumulada,
+        name = 'Acumulada',
+        marker = dict(color = 'rgba(44, 69, 148, 1)'),
+    )
     graficoAderencia.add_trace(aderenciaAcumulada, row = 2, col = 1)
     graficoAderencia.add_trace(curvaMeta, row = 2, col = 1)
 
     # ajustando layout
     graficoAderencia.update_layout(
+        barmode='group',  # Define o modo de agrupamento para barras
         showlegend = False,
         title_text = 'Aderências: ' + self.propriedadesGerais['gestorDaVez'].upper(),
     )
 
     # Exibindo figura
     graficoAderencia.show()
+    
