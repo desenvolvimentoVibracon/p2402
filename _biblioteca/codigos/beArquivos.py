@@ -24,11 +24,12 @@ def f_abrePlanilha(caminhoArquivo):
             tabelaDaVez,
 
             # Pegando apenas colunas A e B
-            usecols=[0, 1],
+            usecols=[0, 1, 2],
 
             # Nomeando abas no DataFrame
-            names=['tarefas', 'datas']
+            names=['tarefas', 'datas', 'conclusao']
         )
+        porcentagemConclusao = tabelaDaVez['conclusao'].tolist()
 
         # Convertendo datas de timestamp para string personalizada
         tabelaDaVez['datas'] = tabelaDaVez['datas'].apply(lambda dataDaVez: dataDaVez if not pd.isnull(dataDaVez) else None)
@@ -36,9 +37,9 @@ def f_abrePlanilha(caminhoArquivo):
         # Adicionando colunas de status e cor do status
         nLinhas = len(tabelaDaVez)
         tabelaDaVez.insert(0, 'cor', ['f7f7f7'] * nLinhas)
-        
         # Adicionando coluna de status com valores padrão 'OK'
         tabelaDaVez.insert(1, 'status', ['OK'] * nLinhas) 
+
         # Verificando se a tarefa já está atrasada ou em risco
         for i, data in enumerate(tabelaDaVez['datas']):
             if not pd.isnull(data):
@@ -49,6 +50,6 @@ def f_abrePlanilha(caminhoArquivo):
                     tabelaDaVez.at[i, 'status'] = 'RISCO'
 
         # Adicionando os dados da aba atual à lista
-        tabelaLida.append({'gestor': nomesAbas[indiceAbas].upper(), 'dados': tabelaDaVez, 'planoDeAcao': []})
+        tabelaLida.append({'gestor': nomesAbas[indiceAbas].upper(), 'dados': tabelaDaVez, 'conclusao': porcentagemConclusao, 'planoDeAcao': []})
 
     return tabelaLida

@@ -15,7 +15,7 @@ def f_criaBotao(textoBotao, imagemBotao, funcaoBotao):
             background-color: lightGray;
         }
     '''
-
+    
     # configurações
     botaoCriado = QPushButton(textoBotao)
     botaoCriado.setIcon(QIcon(QPixmap(imagemBotao)))
@@ -24,8 +24,6 @@ def f_criaBotao(textoBotao, imagemBotao, funcaoBotao):
     botaoCriado.clicked.connect(funcaoBotao)
     
     return botaoCriado
-
-
 
 # -----------------------------------------
 # função para criação de tabelas

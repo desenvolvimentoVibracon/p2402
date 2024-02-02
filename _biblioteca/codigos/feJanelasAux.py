@@ -8,6 +8,8 @@ import plotly.offline as pyo
 import plotly.graph_objs as go
 from plotly.subplots import make_subplots
 
+import pandas as pd
+
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import(QHBoxLayout, QVBoxLayout, QDialog, QLabel, QDialogButtonBox, QComboBox, QComboBox)
 
@@ -213,4 +215,69 @@ def f_plotaAderencias(self, datasCompletas):
 
     # Exibindo figura
     graficoAderencia.show()
+
+# -----------------------------------------
+# função para plotar o gráfico pizza
+def f_plotaTarefas(self): 
+    planilha = '_aux/informativo.xlsx'  
+    df = pd.read_excel(planilha, usecols=[1])
+    valores = df.iloc[0:, 0].tolist()
+    dfe = pd.read_excel(planilha, usecols=[2])
+    valoresTotais = dfe.iloc[4:, 0].tolist()
+    nomesLideres = ['MAURO', 'ROGÉRIO', 'MARCOS', 'ANA']
+    cores = ['#5D9145', '#2C4594', '#EE964B', '#942c79']
+
+    # Criando o gráfico de pizza
+    grafico = go.Figure(data=[go.Pie(labels=nomesLideres, values=valores, textposition='inside', marker=dict(colors=cores))])
+    # Adicionando título ao gráfico
+    grafico.update_layout(title_text=f'RELAÇÃO DE TAREFAS')
+    # Aumentando o tamanho da fonte 
+    grafico.update_layout(legend_font_size=25, title_font_size=40)
+    grafico.update_layout(height=850,  width=1700)
+    grafico.update_layout(legend=dict(x=0.8, y=1))  
+
     
+    fontConfig =dict(
+                size=20,  # Tamanho da fonte
+                color="black",  # Cor do texto
+                family="Arial",  # Estilo da fonte
+            )
+
+    # Adicionando anotações
+    anotacoes = [
+        dict(
+            x=0,
+            y=0.15,
+            text=f"TOTAL EM ANDAMENTO: {int(valoresTotais[0])}",
+            showarrow=False,
+            font=fontConfig
+        ),
+        dict(
+            x=0,
+            y=0.1,
+            text=f"TOTAL JANEIRO: {int(valoresTotais[1])}",
+            showarrow=False,
+            font=fontConfig
+        ),
+        dict(
+            x=0,
+            y=0.05,
+            text=f"TOTAL FEVEREIRO: {int(valoresTotais[2])}",
+            showarrow=False,
+            font=fontConfig
+        ),
+        dict(
+            x=0,
+            y=0,
+            text=f"TOTAL MARÇO: {int(valoresTotais[3])}",
+            showarrow=False,
+            font=fontConfig
+        ),
+    ]
+
+    # Adicionando as anotações ao layout do gráfico
+    for anotacao in anotacoes:
+        grafico.add_annotation(anotacao)
+
+    # Exibindo o gráfico
+    grafico.show()
