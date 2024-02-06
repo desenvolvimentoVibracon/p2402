@@ -5,7 +5,7 @@ import pandas as pd
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon, QPixmap, QBrush, QColor
-from PyQt5.QtWidgets import QHeaderView, QApplication, QMessageBox, QHBoxLayout, QMainWindow, QLabel, QVBoxLayout, QWidget, QFileDialog, QComboBox, QTableWidgetItem, QDialog
+from PyQt5.QtWidgets import QHeaderView, QApplication, QMessageBox, QHBoxLayout, QMainWindow, QLabel, QVBoxLayout, QWidget, QFileDialog, QComboBox, QTableWidgetItem, QDialog, QInputDialog
 from PyQt5 import QtGui
 from datetime import datetime
 import plotly.graph_objects as go
@@ -63,10 +63,10 @@ class JanelaPrincipal(QMainWindow):
 
         # > fe
         # título da janela
-        self.setWindowTitle('VIBRACON VibraPlan (v.2023.12.11)')
+        self.setWindowTitle('VIBRACON VibraPlan (v.2024.02.05)')
 
         # ícone
-        self.setWindowIcon(QIcon('_biblioteca/arte/logos/iconeVibracon1.ico'))
+        self.setWindowIcon(QIcon('_biblioteca/arte/logos/logoVibracon1.png'))
 
         # posição e tamanho da janela
         self.setGeometry(100, 100, 1200, 900) 
@@ -155,7 +155,10 @@ class JanelaPrincipal(QMainWindow):
 
     # -----------------------------------------
     # função para atualizar exibição do gráfico
-    def f_atualizaVisualizacao(self):      
+    def f_atualizaVisualizacao(self): 
+        mesDaVez = self.f_selecionaMes()
+        if mesDaVez is None:
+            return  # O usuário cancelou a seleção do mês
         QMessageBox.information(self, 'AVISO', f'Após confirmar abaixo, aguarde a confirmação enquanto os dados são atualizados!')
 
         # limpando tabela
@@ -164,11 +167,12 @@ class JanelaPrincipal(QMainWindow):
         self.quadroTarefas.setColumnCount(0)
         
         # variável global que irá armazenar dia a dia do período lido
+        global datasCompletas
         datasCompletas = []
         dataAtualSemHora = datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)
 
         riscoEmDias = 2
-        pegarMes=0
+        mesAtual=0
         
         # percorrendo todas as abas até encontrar a desejada
         for indiceTabela, gestaoPossivel in enumerate(self.propriedadesGerais['gestoesPossiveis']):
@@ -179,8 +183,8 @@ class JanelaPrincipal(QMainWindow):
                     if not pd.isna(dataDaVez):
                         if isinstance(dataDaVez, pd.Timestamp):
                             dataDaVez = dataDaVez.strftime('%d-%b-%y')
-                        pegarMes = datetime.strptime(dataDaVez, '%d-%b-%y').month
-                    if pegarMes == 1:
+                        mesAtual = datetime.strptime(dataDaVez, '%d-%b-%y').month
+                    if mesAtual == mesDaVez:
                         datasCompletas.append(dataDaVez)              
                         
                 # passando strings para datas
@@ -194,7 +198,6 @@ class JanelaPrincipal(QMainWindow):
                 self.quadroTarefas.setRowCount(self.tabelaLida[indiceTabela]['dados'].shape[0])
                 self.quadroTarefas.setColumnCount(self.quantidadeColunas)
                 self.quadroTarefas.setHorizontalHeaderLabels(['STATUS', 'TAREFAS', '%'] + datasCompletas + ['CAUSA DO DESVIO','PLANO DE AÇÃO'])
-
                 # largura das colunas, em ordem 
                 self.quadroTarefas.setColumnWidth(0, 100)  
                 self.quadroTarefas.setColumnWidth(1, 300)
@@ -217,7 +220,7 @@ class JanelaPrincipal(QMainWindow):
 
                     # porcentagem de conclusão
                     try:
-                        item = QTableWidgetItem(str(colunaConclusao[indiceTarefa]))
+                        item = QTableWidgetItem(str(colunaConclusao[indiceTarefa]) + '%')
                         self.quadroTarefas.setItem(indiceTarefa, 2, item)
                     except:
                         pass
@@ -242,7 +245,6 @@ class JanelaPrincipal(QMainWindow):
                         # adicionando lista suspensa na coluna de status quando houver tarefa
                         self.f_adicionaListaStatus(indiceTabela, okDaVez['linha'], okDaVez['coluna'])
                         self.f_adicionaListaDesvio(indiceTabela, okDaVez['linha'])
-
                 except Exception:
                     # identificando datas de realização de cada tarefa
                     datasTarefas = self.tabelaLida[indiceTabela]['dados'].iloc[:, 3]
@@ -268,22 +270,34 @@ class JanelaPrincipal(QMainWindow):
                             self.f_adicionaListaDesvio(indiceTabela, linhaDaVez)
                         except Exception: pass
                 break
-        self.quadroTarefas.itemChanged.connect(self.f_trataAlteracaoPorcentagem)
+                
+        # chamada da função que atualiza porcentagem
+        self.quadroTarefas.itemChanged.connect(lambda item: self.f_atualizouPorcentagem)
+                
         # chamada da função que identifica cabeçalho
-        self.f_identificaCabecalho()
+        #self.f_identificaCabecalho()
 
         QMessageBox.information(self, 'AVISO', f'Dados importados com sucesso!\n\n')
+    # ---------------------------------------------
+    # Função para o usuário selecionar o mês
+    def f_selecionaMes(self):
+        meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
+        mes, ok = QInputDialog.getItem(self, "Selecionar Mês", "Escolha o mês a ser aberto:", meses, 0, False)
+        if ok and mes:
+            return meses.index(mes) + 1  # Adiciona 1 para corresponder ao índice dos meses em python
 
+    # -----------------------------------------------    
     # Função para tratar a alteração de porcentagem
-    def f_trataAlteracaoPorcentagem(self, item):
+    def f_atualizouPorcentagem(self, item):
         # Verifica se o item alterado está na coluna de porcentagem (%)
         if item.column() == 2:  
             # Obtém o novo valor do item
             novoValor = item.text()
-            # Salva o novo valor na tabela de dados
             linha = item.row()
-            self.tabelaLida[2]['conclusao'][linha] = novoValor
-
+            indiceDaColuna = 2
+            # Salva o novo valor na tabela de dados
+            self.tabelaLida[indiceDaColuna]['conclusao'][linha] = novoValor
+            
     # -------------------------------------------
     # função para adicionar lista suspensa de status
     def f_adicionaListaStatus(self, indiceTabela, linhaDaVez, colunaDaVez):
@@ -315,12 +329,17 @@ class JanelaPrincipal(QMainWindow):
         dropdown.setStyleSheet('QComboBox { background-color: transparent; border: 0px}')
         dropdown.addItems(['', 'Aprovação do cliente', 'Prazo', 'Falta de recurso', 'Qualidade de entrega', 'Desenvolvimento da tarefa', 
                            'Mobilização', 'Elaboração e Verificação', 'Falta de prioridade', 'Arquivo técnico', 'Falha no planejamento', ''])
-        dropdown.currentIndexChanged.connect(lambda index, linha=linhaDaVez: self.f_atualizouListaDesvio(linha))
+        dropdown.currentIndexChanged.connect(lambda index, linha=linhaDaVez: self.f_atualizouListaDesvio(linha, indiceTabela))
         self.quadroTarefas.setCellWidget(linhaDaVez, self.quantidadeColunas-2, dropdown)
 
     #----------------------------------------------------------------
     # função para armazenar as 
-    def f_atualizouListaDesvio(self, linha): 
+    def f_atualizouListaDesvio(self, linha, indiceTabela): 
+        # identificando emissor do sinal de atualização de lista suspensa
+        campoListaSuspensa = self.sender()
+        valorDaVez = campoListaSuspensa.currentText()
+
+        self.tabelaLida[indiceTabela]['desvios'] = valorDaVez
         # Obtém a opção selecionada
         opcaoSelecionada = self.quadroTarefas.cellWidget(linha, self.quantidadeColunas-2).currentText()
         
@@ -348,12 +367,12 @@ class JanelaPrincipal(QMainWindow):
             mensagem += f'{opcao}: {contador}\n'
 
         QMessageBox.information(self, 'Contadores de Desvio', mensagem)
-
     # -------------------------------------------
     # função para inicializar janela de gráficos
     def f_abreJanelaGraficoAderencias(self):
         # chamando classe com janela para seleção do gesto
-        try: feJanelasAux.f_plotaAderencias(self, datasCompletas)
+        try: 
+            feJanelasAux.f_plotaAderencias(self, datasCompletas)
         except Exception as erro: QMessageBox.critical(self, 'AVISO', f'Erro ao plotar as aderências.\n\n {str(erro)}')
 
     # ------------------------------------------
@@ -434,7 +453,7 @@ class JanelaPrincipal(QMainWindow):
             try:
                 planoDeAcao.append(self.quadroTarefas.item(linhaDaVez, self.quadroTarefas.columnCount()-1).text())
             except:
-                planoDeAcao.append('')
+                pass
 
         # percorrendo todas as abas até encontrar a desejada
         for indiceTabela, gestaoPossivel in enumerate(self.propriedadesGerais['gestoesPossiveis']):
@@ -459,7 +478,7 @@ class JanelaPrincipal(QMainWindow):
         for linhaDaVez in range(self.quadroTarefas.rowCount()):
             # Verificar se todas as letras na linha estão em caixa alta
             linhaTexto = ""
-            for coluna in range(self.quadroTarefas.columnCount()):
+            for coluna in range(self.quadroTarefas.columnCount() - 1):
                 try:
                     linhaTexto += str(self.quadroTarefas.item(linhaDaVez, coluna).text())
                 except AttributeError:
@@ -472,7 +491,7 @@ class JanelaPrincipal(QMainWindow):
     # função para personalização dos cabeçalhos da tabela
     def f_personalizaCabecalho(self, linhaDaVez):
     # percorrendo três primeiras colunas de cabeçalho
-        for colunaDaVez in range(0, 3):
+        for colunaDaVez in range(0, 2):
             # pegando célula: caso não exista (células vazias), crio
             celulaDaVez = self.quadroTarefas.item(linhaDaVez, colunaDaVez)
             if celulaDaVez is None:

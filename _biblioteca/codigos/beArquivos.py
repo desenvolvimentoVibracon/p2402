@@ -30,7 +30,6 @@ def f_abrePlanilha(caminhoArquivo):
             names=['tarefas', 'datas', 'conclusao']
         )
         porcentagemConclusao = tabelaDaVez['conclusao'].tolist()
-
         # Convertendo datas de timestamp para string personalizada
         tabelaDaVez['datas'] = tabelaDaVez['datas'].apply(lambda dataDaVez: dataDaVez if not pd.isnull(dataDaVez) else None)
 
@@ -48,6 +47,13 @@ def f_abrePlanilha(caminhoArquivo):
                     tabelaDaVez.at[i, 'status'] = 'ATRASADO'
                 elif 0 <= diferenca_dias <= 3:
                     tabelaDaVez.at[i, 'status'] = 'RISCO'
+                # Percorrendo a lista de porcentagens de conclusão
+            for i, conclusao in enumerate(porcentagemConclusao):
+                # Verificando se a conclusão é igual a 100
+                if conclusao == 100:
+                    # Atualizando o status para 'ENTREGUE'
+                    tabelaDaVez.at[i, 'status'] = 'ENTREGUE'
+
 
         # Adicionando os dados da aba atual à lista
         tabelaLida.append({'gestor': nomesAbas[indiceAbas].upper(), 'dados': tabelaDaVez, 'conclusao': porcentagemConclusao, 'planoDeAcao': []})

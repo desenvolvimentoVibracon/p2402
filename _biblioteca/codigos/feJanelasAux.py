@@ -60,7 +60,6 @@ class JanelaSelecionaGestor(QDialog):
         self.dialogoOpcoes.button(QDialogButtonBox.Cancel).setText('Cancelar')
         linha.addWidget(self.dialogoOpcoes)
         layout.addLayout(linha)
-
         # definindo layout
         self.setLayout(layout)
 
@@ -84,7 +83,7 @@ def f_plotaAderencias(self, datasCompletas):
     # obtendo número de dias por semana
     diasSemanaVez = 0
     diasPorSemana = []
-    for indiceData in range(len(datasCompletas)-1):
+    for indiceData in range(len(datasCompletas)-2):
         diferencaEmDias = abs((datetime.strptime(datasCompletas[indiceData+1], '%d-%b') - datetime.strptime(datasCompletas[indiceData], '%d-%b')).days)
         if diferencaEmDias <= 1:
             diasSemanaVez += 1
@@ -104,15 +103,15 @@ def f_plotaAderencias(self, datasCompletas):
     for colunaDaVez in range(self.quadroTarefas.columnCount()):
         for linhaDaVez in range(self.quadroTarefas.rowCount()):
             try:
-                if self.quadroTarefas.item(linhaDaVez, colunaDaVez+3).text() ==  'OK':
+                if self.quadroTarefas.item(linhaDaVez, colunaDaVez+3).text() != '':
                     contaOk += 1
 
                     # verificando quantidade de entregue
-                    if self.quadroTarefas.cellWidget(linhaDaVez, 1).currentText() ==  'ENTREGUE':
+                    if self.quadroTarefas.cellWidget(linhaDaVez, 0).currentText() ==  'ENTREGUE':
                         contaEntregue += 1
 
                     # verificando quantidade de efprazo
-                    if self.quadroTarefas.cellWidget(linhaDaVez, 1).currentText() ==  'EFPRAZO':
+                    if self.quadroTarefas.cellWidget(linhaDaVez, 0).currentText() ==  'EFPRAZO':
                         contaEfprazo += 1
 
             except: pass
@@ -216,10 +215,11 @@ def f_plotaAderencias(self, datasCompletas):
     # Exibindo figura
     graficoAderencia.show()
 
+
 # -----------------------------------------
 # função para plotar o gráfico pizza
 def f_plotaTarefas(self): 
-    planilha = '_aux/informativo.xlsx'  
+    planilha = 'W:\PLANEJAMENTO\GESTÃO À VISTA\VIBRACON VibraPlan\_arquivos\informativo.xlsx'  
     df = pd.read_excel(planilha, usecols=[1])
     valores = df.iloc[0:, 0].tolist()
     dfe = pd.read_excel(planilha, usecols=[2])

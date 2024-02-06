@@ -1,18 +1,14 @@
 # -*- mode: python ; coding: utf-8 -*-
 
+datas = []
 
 block_cipher = None
 
-
 a = Analysis(
     ['principal.py'],
-    pathex=[
-        'C:/Users/ADV/Documents/vibraconService/projetos/p2303/p2303sw/_biblioteca/codigos',
-        'C:/Users/ADV/Documents/vibraconService/projetos/p2303/p2303sw/_biblioteca/arte/logos',
-        'C:/Users/ADV/Documents/vibraconService/projetos/p2303/p2303sw/_biblioteca/arte/botoes'
-    ],
+    pathex=[],
     binaries=[],
-    datas=[],
+    datas=datas,
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -29,10 +25,10 @@ exe = EXE(
     pyz,
     a.scripts,
     a.binaries,
-    a.zipfiles,
     a.datas,
     [],
-    name='principal',
+    name='VIBRACON Vibraplan (v.2024.02.05)',
+    icon= '_biblioteca/arte/logos/iconeVibracon1.ico',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -45,5 +41,4 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon='C:/Users/ADV/Documents/vibraconService/projetos/p2303/p2303sw/_biblioteca/arte/logos/iconeVibracon1.ico'
 )
