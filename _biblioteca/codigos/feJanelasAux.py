@@ -6,6 +6,7 @@ import numpy as np
 
 import plotly.offline as pyo
 import plotly.graph_objs as go
+import plotly.io as pio
 from plotly.subplots import make_subplots
 
 import pandas as pd
@@ -83,6 +84,7 @@ def f_plotaAderencias(self, datasCompletas):
     # obtendo número de dias por semana
     diasSemanaVez = 0
     diasPorSemana = []
+    totalAderencias = 0
     for indiceData in range(len(datasCompletas)-2):
         diferencaEmDias = abs((datetime.strptime(datasCompletas[indiceData+1], '%d-%b') - datetime.strptime(datasCompletas[indiceData], '%d-%b')).days)
         if diferencaEmDias <= 1:
@@ -118,8 +120,10 @@ def f_plotaAderencias(self, datasCompletas):
         totalOk.append(contaOk)
         contaOk = 0
         totalEntregue.append(contaEntregue)
+        totalAderencias += contaEntregue
         contaEntregue = 0
         totalEfprazo.append(contaEfprazo)
+        totalAderencias += contaEfprazo
         contaEfprazo = 0
 
     # verificando quantidade de ok e de entregue por semana
@@ -153,6 +157,7 @@ def f_plotaAderencias(self, datasCompletas):
     okSemanal = np.array(okSemanal)
     entregueSemanal = np.array(entregueSemanal)
     efprazoSemanal = np.array(efprazoSemanal)
+    
 
     # aderência semanal
     aderenciaSemanal = np.round(100 * entregueSemanal/okSemanal, 0)
@@ -179,42 +184,56 @@ def f_plotaAderencias(self, datasCompletas):
         mode = 'lines+markers',
     )
 
-        # criando figura com subplots
+    # criando figura com subplots lado a lado
     graficoAderencia = make_subplots(
-        rows = 2, cols = 1,
-        shared_xaxes = True,
-        subplot_titles = ['Semanal [%]', 'Acumulada [%]'],
-        # vertical_spacing=  0.1,
+        rows=1, cols=2,  # Uma linha, duas colunas
+        subplot_titles=['Semanal [%]', 'Acumulada [%]'],
     )
-
+    textoAderenciaSemanal = [f'{round(valor, 1)} %' for valor in aderenciaSemanal]
+    # Adiciona o gráfico semanal ao primeiro subplot
     aderenciaSemanal = go.Bar(
-    x = nomesSemana,
-    y = aderenciaSemanal,
-    name = 'Semanal',
-    marker = dict(color = 'rgba(44, 69, 148, 1)'),
+        x=nomesSemana,
+        y=aderenciaSemanal,
+        name='Semanal',
+        marker=dict(color='rgba(44, 69, 148, 1)'),
+        text=textoAderenciaSemanal
     )
-    graficoAderencia.add_trace(aderenciaSemanal, row = 1, col = 1)
-    graficoAderencia.add_trace(curvaMeta, row = 1, col = 1)
+    graficoAderencia.add_trace(aderenciaSemanal, row=1, col=1)  # Adiciona ao primeiro subplot
 
+    textoAderenciaAcumulada = [f'{round(valor, 1)} %' for valor in aderenciaAcumulada]
+    # Adiciona o gráfico acumulado ao segundo subplot
     aderenciaAcumulada = go.Bar(
-        x = nomesSemana,
-        y = aderenciaAcumulada,
-        name = 'Acumulada',
-        marker = dict(color = 'rgba(44, 69, 148, 1)'),
+        x=nomesSemana,
+        y=aderenciaAcumulada,
+        name='Acumulada',
+        marker=dict(color='rgba(44, 69, 148, 1)'),
+        text=textoAderenciaAcumulada,
     )
-    graficoAderencia.add_trace(aderenciaAcumulada, row = 2, col = 1)
-    graficoAderencia.add_trace(curvaMeta, row = 2, col = 1)
+    graficoAderencia.add_trace(aderenciaAcumulada, row=1, col=2)  # Adiciona ao segundo subplot
 
-    # ajustando layout
+    # Adiciona a curva de meta aos dois subplots
+    curvaMeta = go.Scatter(
+        x=[nomesSemana[0], nomesSemana[-1]],
+        y=[85, 85],
+        name='Meta',
+        marker=dict(color='rgba(93, 145, 69, .5)', size=0),
+        mode='lines+markers',
+    )
+    graficoAderencia.add_trace(curvaMeta, row=1, col=1)
+    graficoAderencia.add_trace(curvaMeta, row=1, col=2)
+
+    # Ajusta o layout do gráfico
     graficoAderencia.update_layout(
         barmode='group',  # Define o modo de agrupamento para barras
-        showlegend = False,
-        title_text = 'Aderências: ' + self.propriedadesGerais['gestorDaVez'].upper(),
+        showlegend=False,
+        title_text='Aderências: ' + self.propriedadesGerais['gestorDaVez'].upper(),
+        width=1920,  # Largura total da figura
+        height=900,  # Altura total da figura
+        title_font_size=24,
     )
 
-    # Exibindo figura
+    # Exibe a figura
     graficoAderencia.show()
-
 
 # -----------------------------------------
 # função para plotar o gráfico pizza
@@ -224,17 +243,18 @@ def f_plotaTarefas(self):
     valores = df.iloc[0:, 0].tolist()
     dfe = pd.read_excel(planilha, usecols=[2])
     valoresTotais = dfe.iloc[4:, 0].tolist()
-    nomesLideres = ['MAURO', 'ROGÉRIO', 'MARCOS', 'ANA']
-    cores = ['#5D9145', '#2C4594', '#EE964B', '#942c79']
+    nomesLideres = [f'MAURO: {int (valores[0])}', f'ROGÉRIO: {int (valores[1])}', f'MARCOS: {int (valores[2])}', f'ANA: {int (valores[3])}']
+    cores = ['#19647e', '#bd77b7', '#28afb0', '#ee964b']
 
     # Criando o gráfico de pizza
     grafico = go.Figure(data=[go.Pie(labels=nomesLideres, values=valores, textposition='inside', marker=dict(colors=cores))])
     # Adicionando título ao gráfico
-    grafico.update_layout(title_text=f'RELAÇÃO DE TAREFAS')
+    grafico.update_layout(title_text=f'RELAÇÃO DE PROJETOS')
     # Aumentando o tamanho da fonte 
-    grafico.update_layout(legend_font_size=25, title_font_size=40)
+    grafico.update_layout(legend_font_size=23, title_font_size=40)
     grafico.update_layout(height=850,  width=1700)
-    grafico.update_layout(legend=dict(x=0.8, y=1))  
+    grafico.update_layout(legend=dict(x=0.8, y=1)) 
+
 
     
     fontConfig =dict(
@@ -278,6 +298,6 @@ def f_plotaTarefas(self):
     # Adicionando as anotações ao layout do gráfico
     for anotacao in anotacoes:
         grafico.add_annotation(anotacao)
-
+    pio.write_html(grafico, 'graficoProjetos.html')
     # Exibindo o gráfico
     grafico.show()

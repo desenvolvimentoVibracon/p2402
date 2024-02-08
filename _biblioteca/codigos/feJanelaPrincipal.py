@@ -59,6 +59,7 @@ class JanelaPrincipal(QMainWindow):
             'gestorDaVez': '',
             'gestoesPossiveis': []
         }
+
         self.tabelaLida = []
 
         # > fe
@@ -84,15 +85,7 @@ class JanelaPrincipal(QMainWindow):
         # espaçamento vertical
         layout.addSpacing(int(self.height() * 0.05))
 
-
         linha = QHBoxLayout() # horizontal
-
-        # botao para mostrar gráfico de tarefas
-        self.botaoMostraGraficoTarefas = feComponentes.f_criaBotao('', '_biblioteca/arte/botoes/botaoRelacaoTarefas.png', self.f_abreJanelaGraficoTarefas)
-        linha.addWidget(self.botaoMostraGraficoTarefas)  
-        linha.setAlignment(Qt.AlignLeft) 
-            
-        linha.addSpacing(int(self.width() * 0.55))
 
         # logo vibracon 
         self.logoVibracon = QLabel(self)
@@ -101,7 +94,7 @@ class JanelaPrincipal(QMainWindow):
         self.logoVibracon.setMaximumHeight(80)
         self.logoVibracon.setMaximumWidth(1000)
         linha.addWidget(self.logoVibracon)
-        linha.setAlignment(Qt.AlignCenter)
+        linha.setAlignment(Qt.AlignRight)
   
 
         # pulando para próxima linha
@@ -142,6 +135,10 @@ class JanelaPrincipal(QMainWindow):
         self.botaoMostraGraficoAderencia = feComponentes.f_criaBotao('', '_biblioteca/arte/botoes/botaoAderencias.png', self.f_abreJanelaGraficoAderencias)
         linha.addWidget(self.botaoMostraGraficoAderencia)
 
+        # botao para mostrar gráfico de projetos
+        self.botaoMostraGraficoProjetos = feComponentes.f_criaBotao('', '_biblioteca/arte/botoes/botaoRelacaoProjetos.png', self.f_abreJanelaGraficoProjetos)
+        linha.addWidget(self.botaoMostraGraficoProjetos)  
+
         # adicionando linha
         layout.addLayout(linha)
 
@@ -160,7 +157,6 @@ class JanelaPrincipal(QMainWindow):
         if mesDaVez is None:
             return  # O usuário cancelou a seleção do mês
         QMessageBox.information(self, 'AVISO', f'Após confirmar abaixo, aguarde a confirmação enquanto os dados são atualizados!')
-
         # limpando tabela
         self.quadroTarefas.clearContents()
         self.quadroTarefas.setRowCount(0)
@@ -172,8 +168,8 @@ class JanelaPrincipal(QMainWindow):
         dataAtualSemHora = datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)
 
         riscoEmDias = 2
-        mesAtual=0
-        
+        mesAtual= 0
+
         # percorrendo todas as abas até encontrar a desejada
         for indiceTabela, gestaoPossivel in enumerate(self.propriedadesGerais['gestoesPossiveis']):
             # quando encontrar a desejada
@@ -185,48 +181,59 @@ class JanelaPrincipal(QMainWindow):
                             dataDaVez = dataDaVez.strftime('%d-%b-%y')
                         mesAtual = datetime.strptime(dataDaVez, '%d-%b-%y').month
                     if mesAtual == mesDaVez:
-                        datasCompletas.append(dataDaVez)              
+                        datasCompletas.append(dataDaVez)
                         
                 # passando strings para datas
-                datasCompletas = [pd.to_datetime(date) for date in datasCompletas if isinstance(date, str)]  # Filtra apenas strings para conversão
+                datasCompletas = [pd.to_datetime(date, format='%d-%b-%y') for date in datasCompletas if isinstance(date, str)]   # Filtra apenas strings para conversão
                 if datasCompletas:
                     primeiraData = min(datasCompletas)  # Encontra a primeira data válida
                     ultimaData = max(datasCompletas)    # Encontra a última data válida
                     datasCompletas = pd.date_range(start=primeiraData, end=ultimaData, freq='b').strftime('%d-%b').tolist()
                 # definindo número de linhas e colunas de acordo com quantidade de tarefas e datas, respectivamente
-                self.quantidadeColunas = self.tabelaLida[indiceTabela]['dados'].shape[1] + len(datasCompletas)
+                self.quantidadeColunas = self.tabelaLida[indiceTabela]['dados'].shape[1] + len(datasCompletas) - 3
                 self.quadroTarefas.setRowCount(self.tabelaLida[indiceTabela]['dados'].shape[0])
                 self.quadroTarefas.setColumnCount(self.quantidadeColunas)
-                self.quadroTarefas.setHorizontalHeaderLabels(['STATUS', 'TAREFAS', '%'] + datasCompletas + ['CAUSA DO DESVIO','PLANO DE AÇÃO'])
+                
+                self.quadroTarefas.setHorizontalHeaderLabels(['STATUS', 'TAREFAS', ] + datasCompletas + ['CAUSA DO DESVIO', 'PLANO DE AÇÃO', 'DATA', 'RESPONSÁVEL'])
                 # largura das colunas, em ordem 
                 self.quadroTarefas.setColumnWidth(0, 100)  
                 self.quadroTarefas.setColumnWidth(1, 300)
-                self.quadroTarefas.setColumnWidth(2, 50)
-                for indiceColuna in range(2, self.quantidadeColunas-1):
+                for indiceColuna in range(2, self.quantidadeColunas-4):
                     self.quadroTarefas.setColumnWidth(indiceColuna, 50)
-                self.quadroTarefas.setColumnWidth(self.quantidadeColunas-2, 150)
-                self.quadroTarefas.setColumnWidth(self.quantidadeColunas-1, 300)
- 
+                self.quadroTarefas.setColumnWidth(self.quantidadeColunas-4, 150)
+                self.quadroTarefas.setColumnWidth(self.quantidadeColunas-3, 300)
+                self.quadroTarefas.setColumnWidth(self.quantidadeColunas-2, 100)
+                self.quadroTarefas.setColumnWidth(self.quantidadeColunas-1, 100)
 
                 # listando tarefas
                 colunaTarefas = self.tabelaLida[indiceTabela]['dados'].iloc[:, 2]
-                colunaConclusao = self.tabelaLida[indiceTabela]['conclusao']
-                colunaPlanoAcao = self.tabelaLida[indiceTabela]['planoDeAcao']
+                colunaDesvios = self.tabelaLida[indiceTabela]['dados']['desvios']
+                colunaPlanoAcao = self.tabelaLida[indiceTabela]['dados']['planoDeAcao']
+                colunaDataPlano = self.tabelaLida[indiceTabela]['dados']['dataDoPlano']
+                colunaNomePlano = self.tabelaLida[indiceTabela]['dados']['coordenador']
 
                 for indiceTarefa in range(colunaTarefas.shape[0]):
                     # tarefa
-                    item = QTableWidgetItem(str(colunaTarefas.iloc[indiceTarefa]))
+                    item = QTableWidgetItem(str(colunaTarefas[indiceTarefa]))
                     self.quadroTarefas.setItem(indiceTarefa, 1, item)
-
-                    # porcentagem de conclusão
-                    try:
-                        item = QTableWidgetItem(str(colunaConclusao[indiceTarefa]) + '%')
-                        self.quadroTarefas.setItem(indiceTarefa, 2, item)
-                    except:
-                        pass
                     # plano de ação
                     try:
                         item = QTableWidgetItem(str(colunaPlanoAcao[indiceTarefa]))
+                        self.quadroTarefas.setItem(indiceTarefa, self.quantidadeColunas-3, item)
+                    except: pass
+                    # desvios
+                    try:
+                        item = QTableWidgetItem(str(colunaDesvios[indiceTarefa]))
+                        self.quadroTarefas.setItem(indiceTarefa, self.quantidadeColunas-4, item)
+                    except: pass
+                    # data do plano de ação 
+                    try:
+                        item = QTableWidgetItem(str(colunaDataPlano[indiceTarefa]))
+                        self.quadroTarefas.setItem(indiceTarefa, self.quantidadeColunas-2, item)
+                    except: pass
+                    # nome do coordenador do plano 
+                    try:
+                        item = QTableWidgetItem(str(colunaNomePlano[indiceTarefa]))
                         self.quadroTarefas.setItem(indiceTarefa, self.quantidadeColunas-1, item)
                     except: pass
                 try:
@@ -253,7 +260,7 @@ class JanelaPrincipal(QMainWindow):
                         try:
                             # selecionando coluna: adicionando 3 devido às colunas de cabeçalho
                             nomeColunaDaVez = dataTarefaDaVez.strftime('%d-%b')
-                            indiceColunaDaVez = datasCompletas.index(nomeColunaDaVez) + 3
+                            indiceColunaDaVez = datasCompletas.index(nomeColunaDaVez) + 2
 
                             if (dataTarefaDaVez < dataAtualSemHora):
                                 # Marcar como "ATRASADO"
@@ -270,10 +277,7 @@ class JanelaPrincipal(QMainWindow):
                             self.f_adicionaListaDesvio(indiceTabela, linhaDaVez)
                         except Exception: pass
                 break
-                
-        # chamada da função que atualiza porcentagem
-        self.quadroTarefas.itemChanged.connect(lambda item: self.f_atualizouPorcentagem)
-                
+           
         # chamada da função que identifica cabeçalho
         #self.f_identificaCabecalho()
 
@@ -285,18 +289,6 @@ class JanelaPrincipal(QMainWindow):
         mes, ok = QInputDialog.getItem(self, "Selecionar Mês", "Escolha o mês a ser aberto:", meses, 0, False)
         if ok and mes:
             return meses.index(mes) + 1  # Adiciona 1 para corresponder ao índice dos meses em python
-
-    # -----------------------------------------------    
-    # Função para tratar a alteração de porcentagem
-    def f_atualizouPorcentagem(self, item):
-        # Verifica se o item alterado está na coluna de porcentagem (%)
-        if item.column() == 2:  
-            # Obtém o novo valor do item
-            novoValor = item.text()
-            linha = item.row()
-            indiceDaColuna = 2
-            # Salva o novo valor na tabela de dados
-            self.tabelaLida[indiceDaColuna]['conclusao'][linha] = novoValor
             
     # -------------------------------------------
     # função para adicionar lista suspensa de status
@@ -323,14 +315,20 @@ class JanelaPrincipal(QMainWindow):
 
     # -----------------------------------------
     # função para adicionar lista suspensa de causa de desvio
-    def f_adicionaListaDesvio(self, indiceTabela, linhaDaVez): #FIXME 
-        # adicionando lista suspensa na coluna de status quando houver tarefa
-        dropdown = QComboBox()
-        dropdown.setStyleSheet('QComboBox { background-color: transparent; border: 0px}')
-        dropdown.addItems(['', 'Aprovação do cliente', 'Prazo', 'Falta de recurso', 'Qualidade de entrega', 'Desenvolvimento da tarefa', 
-                           'Mobilização', 'Elaboração e Verificação', 'Falta de prioridade', 'Arquivo técnico', 'Falha no planejamento', ''])
-        dropdown.currentIndexChanged.connect(lambda index, linha=linhaDaVez: self.f_atualizouListaDesvio(linha, indiceTabela))
-        self.quadroTarefas.setCellWidget(linhaDaVez, self.quantidadeColunas-2, dropdown)
+    def f_adicionaListaDesvio(self, indiceTabela, linhaDaVez): 
+        # Verifica se já existe um widget na célula
+        if isinstance(self.quadroTarefas.cellWidget(linhaDaVez, self.quantidadeColunas-4), QComboBox):
+            # Se existir, atualiza o texto do widget
+            self.quadroTarefas.cellWidget(linhaDaVez, self.quantidadeColunas-4).setCurrentText(self.tabelaLida[indiceTabela]['dados']['desvios'][linhaDaVez])
+        else:
+            # Caso contrário, cria um novo widget e o adiciona à célula
+            dropdown = QComboBox()
+            dropdown.setStyleSheet('QComboBox { background-color: transparent; border: 0px}')
+            dropdown.addItems(['', 'Aprovação do cliente', 'Prazo', 'Falta de recurso', 'Qualidade de entrega', 'Desenvolvimento da tarefa', 
+                            'Mobilização', 'Elaboração e Verificação', 'Falta de prioridade', 'Arquivo técnico', 'Falha no planejamento', ''])
+            dropdown.currentIndexChanged.connect(lambda index, linha=linhaDaVez: self.f_atualizouListaDesvio(linha, indiceTabela))
+            dropdown.setCurrentText(self.tabelaLida[indiceTabela]['dados']['desvios'][linhaDaVez])
+            self.quadroTarefas.setCellWidget(linhaDaVez, self.quantidadeColunas-4, dropdown)
 
     #----------------------------------------------------------------
     # função para armazenar as 
@@ -339,9 +337,9 @@ class JanelaPrincipal(QMainWindow):
         campoListaSuspensa = self.sender()
         valorDaVez = campoListaSuspensa.currentText()
 
-        self.tabelaLida[indiceTabela]['desvios'] = valorDaVez
-        # Obtém a opção selecionada
-        opcaoSelecionada = self.quadroTarefas.cellWidget(linha, self.quantidadeColunas-2).currentText()
+        if isinstance(campoListaSuspensa, QComboBox):
+            # texto de status na variável
+            self.tabelaLida[indiceTabela]['dados'].iloc[linha, -5] = valorDaVez
         
         # Verifica se a lista de opções selecionadas já foi inicializada
         if 'opcoesSelecionadas' not in self.__dict__:
@@ -357,9 +355,9 @@ class JanelaPrincipal(QMainWindow):
         # Atualiza a opção selecionada e seu respectivo contador
         self.opcoesSelecionadas.append({
             'linha': linha,
-            'opcao': opcaoSelecionada
+            'opcao': valorDaVez
         })
-        self.contadoresDesvio[opcaoSelecionada] += 1
+        self.contadoresDesvio[valorDaVez] += 1
 
         # Exibe a mensagem com os contadores
         mensagem = ''
@@ -377,7 +375,7 @@ class JanelaPrincipal(QMainWindow):
 
     # ------------------------------------------
     # função para inicializar janela de gráficos
-    def f_abreJanelaGraficoTarefas(self):
+    def f_abreJanelaGraficoProjetos(self):
         # chamando classe com janela para seleção do gesto
         try: feJanelasAux.f_plotaTarefas(self)
         except Exception as erro: QMessageBox.critical(self, 'AVISO', f'Erro ao plotar as informações.\n\n {str(erro)}')
@@ -397,7 +395,6 @@ class JanelaPrincipal(QMainWindow):
 
         # percorrendo todas as abas até encontrar a da liderança atual
         for indiceTabela, gestaoPossivel in enumerate(self.propriedadesGerais['gestoesPossiveis']):
-
             # quando encontrar a desejada
             if gestaoPossivel == self.propriedadesGerais['gestorDaVez']:
                 self.tabelaLida[indiceTabela]['registroDatas'] = registrosDatas
@@ -446,12 +443,12 @@ class JanelaPrincipal(QMainWindow):
                         corDaVez = textoCor[celulaDaVezValor]
                         self.quadroTarefas.item(linhaDaVez, colunaDaVez).setBackground(QBrush(QColor(corDaVez)))
                         self.quadroTarefas.item(linhaDaVez, colunaDaVez).setForeground(QBrush(QColor(corDaVez)))
-
-        # pegando plano de ação
+        
+        # salvando plano de ação
         planoDeAcao = []
         for linhaDaVez in range(self.quadroTarefas.rowCount()):
             try:
-                planoDeAcao.append(self.quadroTarefas.item(linhaDaVez, self.quadroTarefas.columnCount()-1).text())
+                planoDeAcao.append(self.quadroTarefas.item(linhaDaVez, self.quadroTarefas.columnCount()-3).text())
             except:
                 pass
 
@@ -461,6 +458,44 @@ class JanelaPrincipal(QMainWindow):
             if gestaoPossivel == self.propriedadesGerais['gestorDaVez']:
                 self.tabelaLida[indiceTabela]['planoDeAcao'] = planoDeAcao
         planoDeAcao = []
+
+        # salvando data do plano 
+        dataDoPlano = []
+        for linhaDaVez in range(self.quadroTarefas.rowCount()):
+            try:
+                dataDoPlano.append(self.quadroTarefas.item(linhaDaVez, self.quadroTarefas.columnCount()-2).text())
+            except:
+                pass   
+        for indiceTabela, gestaoPossivel in enumerate(self.propriedadesGerais['gestoesPossiveis']):
+            # quando encontrar a desejada
+            if gestaoPossivel == self.propriedadesGerais['gestorDaVez']:
+                self.tabelaLida[indiceTabela]['dataDoPlano'] = dataDoPlano
+        dataDoPlano = []
+        
+        # salvando nome do coordenador do plano 
+        coordenadorPlano = []
+        for linhaDaVez in range(self.quadroTarefas.rowCount()):
+            try:
+                coordenadorPlano.append(self.quadroTarefas.item(linhaDaVez, self.quadroTarefas.columnCount()-1).text())
+            except:
+                pass   
+        for indiceTabela, gestaoPossivel in enumerate(self.propriedadesGerais['gestoesPossiveis']):
+            # quando encontrar a desejada
+            if gestaoPossivel == self.propriedadesGerais['gestorDaVez']:
+                self.tabelaLida[indiceTabela]['nomeDoCoordenador'] = coordenadorPlano
+        coordenadorPlano = []
+
+        desvios = []
+        for linhaDaVez in range(self.quadroTarefas.rowCount()):
+            try:
+                desvios.append(self.quadroTarefas.item(linhaDaVez, self.quadroTarefas.columnCount()-4).text())
+            except:
+                pass
+        for indiceTabela, gestaoPossivel in enumerate(self.propriedadesGerais['gestoesPossiveis']):
+            # quando encontrar a desejada
+            if gestaoPossivel == self.propriedadesGerais['gestorDaVez']:
+                self.tabelaLida[indiceTabela]['desvios'] = desvios
+        desvios = []
 
     # -----------------------------------------  
     # função para colorir status de acordo com o definido
@@ -498,7 +533,7 @@ class JanelaPrincipal(QMainWindow):
                 celulaDaVez = QTableWidgetItem()
                 self.quadroTarefas.setItem(linhaDaVez, colunaDaVez, celulaDaVez)
 
-            celulaDaVez.setBackground(QtGui.QColor('#20326A'))
+            celulaDaVez.setBackground(QtGui.QColor('#2C4594'))
             
             celulaDaVez.setForeground(QtGui.QColor('white'))
             fonteDaVez = celulaDaVez.font()

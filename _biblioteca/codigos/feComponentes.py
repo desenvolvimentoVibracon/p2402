@@ -19,7 +19,7 @@ def f_criaBotao(textoBotao, imagemBotao, funcaoBotao):
     # configurações
     botaoCriado = QPushButton(textoBotao)
     botaoCriado.setIcon(QIcon(QPixmap(imagemBotao)))
-    botaoCriado.setIconSize(QSize(350, 70))
+    botaoCriado.setIconSize(QSize(250, 50))
     botaoCriado.setStyleSheet(personalizacao)
     botaoCriado.clicked.connect(funcaoBotao)
     

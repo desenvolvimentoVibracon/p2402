@@ -37,15 +37,20 @@ def f_abrePlanilha(caminhoArquivo):
         nLinhas = len(tabelaDaVez)
         tabelaDaVez.insert(0, 'cor', ['f7f7f7'] * nLinhas)
         # Adicionando coluna de status com valores padrão 'OK'
-        tabelaDaVez.insert(1, 'status', ['OK'] * nLinhas) 
+        tabelaDaVez.insert(1, 'status', ['OK'] * nLinhas)
+        tabelaDaVez.insert(4, 'desvios', ['ND'] * nLinhas) 
+        tabelaDaVez.insert(5, 'planoDeAcao', [' '] * nLinhas)
+        tabelaDaVez.insert(6, 'dataDoPlano', [' '] * nLinhas)
+        tabelaDaVez.insert(7, 'coordenador', [' '] * nLinhas)
+        desvios = []
 
         # Verificando se a tarefa já está atrasada ou em risco
         for i, data in enumerate(tabelaDaVez['datas']):
             if not pd.isnull(data):
-                diferenca_dias = (data - hoje).days 
+                diferenca_dias = (data - hoje).days
                 if diferenca_dias < 0:
                     tabelaDaVez.at[i, 'status'] = 'ATRASADO'
-                elif 0 <= diferenca_dias <= 3:
+                elif diferenca_dias <= 3:
                     tabelaDaVez.at[i, 'status'] = 'RISCO'
                 # Percorrendo a lista de porcentagens de conclusão
             for i, conclusao in enumerate(porcentagemConclusao):
@@ -54,8 +59,7 @@ def f_abrePlanilha(caminhoArquivo):
                     # Atualizando o status para 'ENTREGUE'
                     tabelaDaVez.at[i, 'status'] = 'ENTREGUE'
 
-
         # Adicionando os dados da aba atual à lista
-        tabelaLida.append({'gestor': nomesAbas[indiceAbas].upper(), 'dados': tabelaDaVez, 'conclusao': porcentagemConclusao, 'planoDeAcao': []})
+        tabelaLida.append({'gestor': nomesAbas[indiceAbas].upper(), 'dados': tabelaDaVez})
 
     return tabelaLida
