@@ -1,7 +1,7 @@
 # importando bibliotecas
 from PyQt5.QtCore import QSize
 from PyQt5.QtGui import QIcon, QPixmap
-from PyQt5.QtWidgets import QPushButton, QTableWidget
+from PyQt5.QtWidgets import QPushButton, QTableWidget, QHeaderView
 
 # -----------------------------------------------------------------------------------------------
 # função para criação de botões
@@ -19,7 +19,7 @@ def f_criaBotao(textoBotao, imagemBotao, funcaoBotao):
     # configurações
     botaoCriado = QPushButton(textoBotao)
     botaoCriado.setIcon(QIcon(QPixmap(imagemBotao)))
-    botaoCriado.setIconSize(QSize(250, 50))
+    botaoCriado.setIconSize(QSize(250, 10))
     botaoCriado.setStyleSheet(personalizacao)
     botaoCriado.clicked.connect(funcaoBotao)
     

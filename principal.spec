@@ -27,7 +27,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='VIBRACON Vibraplan (v.2024.02.07)',
+    name='VIBRACON Vibraview (v.2024.07.11)',
     icon='_biblioteca/arte/logos/iconeVibracon1.ico',
     debug=False,
     bootloader_ignore_signals=False,
